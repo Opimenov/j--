@@ -58,15 +58,33 @@ class Scanner {
         reserved = new Hashtable<String, TokenKind>();
         reserved.put(ABSTRACT.image(), ABSTRACT);
         reserved.put(BOOLEAN.image(), BOOLEAN);
+        reserved.put(BREAK.image(), BREAK);
+        reserved.put(BYTE.image(), BYTE);
+        reserved.put(CASE.image(), CASE);
+        reserved.put(CATCH.image(), CATCH);		     
         reserved.put(CHAR.image(), CHAR);
         reserved.put(CLASS.image(), CLASS);
+        reserved.put(CONST.image(), CONST);
+        reserved.put(CONTINUE.image(), CONTINUE);
+        reserved.put(DEFAULT.image(), DEFAULT);
+        reserved.put(DO.image(), DO);
+        reserved.put(DOUBLE.image(), DOUBLE);		     
         reserved.put(ELSE.image(), ELSE);
         reserved.put(EXTENDS.image(), EXTENDS);
+        reserved.put(FINAL.image(), FINAL);
+        reserved.put(FINALLY.image(), FINALLY);
+        reserved.put(FLOAT.image(), FLOAT);
+        reserved.put(FOR.image(), FOR);
+        reserved.put(GOTO.image(), GOTO);		     
         reserved.put(FALSE.image(), FALSE);
         reserved.put(IF.image(), IF);
+        reserved.put(IMPLEMENTS.image(), IMPLEMENTS);
         reserved.put(IMPORT.image(), IMPORT);
         reserved.put(INSTANCEOF.image(), INSTANCEOF);
         reserved.put(INT.image(), INT);
+        reserved.put(INTERFACE.image(), INTERFACE);
+        reserved.put(LONG.image(), LONG);
+        reserved.put(NATIVE.image(), NATIVE);
         reserved.put(NEW.image(), NEW);
         reserved.put(NULL.image(), NULL);
         reserved.put(PACKAGE.image(), PACKAGE);
@@ -74,11 +92,20 @@ class Scanner {
         reserved.put(PROTECTED.image(), PROTECTED);
         reserved.put(PUBLIC.image(), PUBLIC);
         reserved.put(RETURN.image(), RETURN);
+        reserved.put(SHORT.image(), SHORT);
         reserved.put(STATIC.image(), STATIC);
+        reserved.put(STRICTFP.image(), STRICTFP);
         reserved.put(SUPER.image(), SUPER);
+        reserved.put(SWITCH.image(), SWITCH);
+        reserved.put(SYNCHRONIZED.image(), SYNCHRONIZED);
         reserved.put(THIS.image(), THIS);
+        reserved.put(THROW.image(), THROW);
+        reserved.put(THROWS.image(), THROWS);
+        reserved.put(TRANSIENT.image(), TRANSIENT);
+        reserved.put(TRY.image(), TRY);
         reserved.put(TRUE.image(), TRUE);
         reserved.put(VOID.image(), VOID);
+        reserved.put(VOLATILE.image(), VOLATILE);		     
         reserved.put(WHILE.image(), WHILE);
 
         // Prime the pump.
@@ -94,18 +121,49 @@ class Scanner {
     public TokenInfo getNextToken() {
         StringBuffer buffer;
         boolean moreWhiteSpace = true;
+	boolean notAnEndMultiline = true; //flip when find / right after *
         while (moreWhiteSpace) {
             while (isWhitespace(ch)) {
                 nextCh();
             }
             if (ch == '/') {
                 nextCh();
+		//division and assign
+		if (ch == '=') {
+		    nextCh();
+		    return new TokenInfo(DIV_ASSIGN, line);
+		}
+		// single line comment 
                 if (ch == '/') {
                     // CharReader maps all new lines to '\n'
                     while (ch != '\n' && ch != EOFCH) {
                         nextCh();
                     }
-                } else {
+		    return getNextToken();
+		}
+		//multiline comment
+		else if (ch == '*') {
+		    while (notAnEndMultiline) {
+			//skip all except '/'
+			while (ch != '*' && ch != EOFCH) {
+			    nextCh();
+			    //		    System.out.println(ch);			    
+			}
+			nextCh();
+			if (ch == EOFCH) {
+			    notAnEndMultiline = false;
+			    reportScannerError("multiline comment is not closed");
+			    return getNextToken();
+			}
+			//if the next ch is '/' exit outer while
+			else if (ch == '/') {
+			    notAnEndMultiline = false;
+			    nextCh(); // get rid off '/'
+			    return getNextToken();
+			}
+		    }
+		}
+		else {
                     return new TokenInfo(DIV, line);
                 }
             } else {
@@ -114,9 +172,17 @@ class Scanner {
         }
         line = input.line();
         switch (ch) {
+        case '~':
+	    nextCh();
+	    return new TokenInfo(COMPLEM, line);
         case '%':
             nextCh();
-            return new TokenInfo(MOD, line);
+	    if (ch == '=') {
+		nextCh();
+		return new TokenInfo(MOD_ASSIGN, line);
+	    } else {
+		return new TokenInfo(MOD, line);
+	    }
         case '(':
             nextCh();
             return new TokenInfo(LPAREN, line);
@@ -151,10 +217,45 @@ class Scanner {
             }
         case '!':
             nextCh();
-            return new TokenInfo(LNOT, line);
+	    if (ch == '=') {
+		nextCh();
+		return new TokenInfo(NOT_EQUAL, line);
+	    } else {
+		return new TokenInfo(LNOT, line);
+	    }
+        case '^':
+            nextCh();
+            if (ch == '=') {
+                nextCh();
+                return new TokenInfo(BITXOR_ASSIGN, line);
+            } else {
+		return new TokenInfo(BITXOR, line);
+	    }
+        case '|':
+            nextCh();
+	    if (ch == '=') {
+		nextCh();
+		return new TokenInfo(BITOR_ASSIGN, line);
+	    }
+	    if (ch == '|') {
+		nextCh();
+		return new TokenInfo(L_OR, line);
+	    }
+	    else {
+		return new TokenInfo(BITOR, line);
+	    }
+        case '?':
+            nextCh();
+            return new TokenInfo(Q_MARK, line);
+	    
         case '*':
             nextCh();
-            return new TokenInfo(STAR, line);
+	    if (ch == '=') {
+		nextCh();
+		return new TokenInfo(STAR_ASSIGN, line);
+	    } else {
+		return new TokenInfo(STAR, line);
+	    }
         case '+':
             nextCh();
             if (ch == '=') {
@@ -171,7 +272,10 @@ class Scanner {
             if (ch == '-') {
                 nextCh();
                 return new TokenInfo(DEC, line);
-            } else {
+            } if (ch == '=') {
+		nextCh();
+		return new TokenInfo(MINUS_ASSIGN, line);
+	    } else {
                 return new TokenInfo(MINUS, line);
             }
         case '&':
@@ -179,21 +283,59 @@ class Scanner {
             if (ch == '&') {
                 nextCh();
                 return new TokenInfo(LAND, line);
-            } else {
-                reportScannerError("Operator & is not supported in j--.");
-                return getNextToken();
+            }
+	    if (ch == '=') {
+		nextCh();
+		return new TokenInfo(BITAND_ASSIGN, line);
+	    }
+	    else {
+		nextCh();
+		return new TokenInfo(BITAND, line);
             }
         case '>':
             nextCh();
-            return new TokenInfo(GT, line);
+	    if (ch == '=') {
+		nextCh();
+		return new TokenInfo(GE, line);
+	    }
+	    if (ch == '>') {
+		nextCh();
+		if (ch == '=') {
+		    nextCh();
+		    return new TokenInfo(R_SHIFT_ASSIGN, line);
+		}
+		if (ch == '>') {
+		    nextCh();
+		    if (ch == '=') {
+			nextCh();
+			return new TokenInfo(UNS_R_SHIFT_ASSIGN, line);
+		    } else {
+			return new TokenInfo(UNS_R_SHIFT, line);
+		    }
+		}
+		else {
+		    return new TokenInfo(R_SHIFT, line);
+		}
+	    }
+	    else {
+		return new TokenInfo(GT, line);
+	    }
         case '<':
             nextCh();
             if (ch == '=') {
                 nextCh();
                 return new TokenInfo(LE, line);
-            } else {
-                reportScannerError("Operator < is not supported in j--.");
-                return getNextToken();
+            } if (ch == '<') {
+                nextCh();
+		if (ch == '=') {
+		    nextCh();
+		    return new TokenInfo(L_SHIFT_ASSIGN, line);
+		}
+		else {
+		    return new TokenInfo(L_SHIFT, line);
+		}
+	    } else {
+                return new TokenInfo(LT, line);
             }
         case '\'':
             buffer = new StringBuffer();
