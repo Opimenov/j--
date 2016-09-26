@@ -470,20 +470,24 @@ class Scanner {
 	    buffer = new StringBuffer();
             nextCh();
 	    
-	    // int hexadecimal
+	    //  hexadecimal
 	    if (ch == 'X' || ch == 'x') {
 		nextCh();
+		// may have 0x.
 		while (isHexDigit(ch) || ch == '.') {
 		    if (alredy_have_dot && ch == '.') {
 			nextCh();
 			reportScannerError("two dots in a float hex number");
+			return getNextToken();
 		    }
 		    if (ch == '.') {
 			alredy_have_dot = true;
 			buffer.append('0');
 		    }
+		    // it is a legal hex digit but not a dot
 		    buffer.append(ch);
 		    nextCh();
+		    // can only be float, but laizy to add another method
 		    while (belongsToFloatOrDuble(ch) ) { 
 			// case of  dot char
 			if (ch == '.' && alredy_have_dot) {
@@ -516,12 +520,16 @@ class Scanner {
 			    continue;
 
 			}
+			//nothing special happened so append
 			buffer.append(ch);
 			nextCh();
 		    }
-		    return new TokenInfo(FLOAT_LITERAL, buffer.toString(), line);				    
 		}
-		return new TokenInfo(HEX_INT_LITERAL, buffer.toString(), line); // add this to the TokenInfo
+		//if have any traits of fractional number
+		if (already_have_Plus_Or_Minus || already_have_P_or_p || alredy_have_dot)
+		    return new TokenInfo(HEX_FLOAT_LITERAL, buffer.toString(), line);
+		//then it must be an integer
+		return new TokenInfo(HEX_INT_LITERAL, buffer.toString(), line);
 	    }
 	    // octal
 	    if (isOctalDigit(ch)) {
