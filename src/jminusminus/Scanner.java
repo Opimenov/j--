@@ -122,6 +122,10 @@ class Scanner {
         StringBuffer buffer;
         boolean moreWhiteSpace = true;
 	boolean notAnEndMultiline = true; //flip when find / right after *
+	boolean alredy_have_dot = false;
+	boolean already_have_E_or_e = false;
+	boolean already_have_P_or_p = false;
+	boolean already_have_Plus_Or_Minus = false;
         while (moreWhiteSpace) {
             while (isWhitespace(ch)) {
                 nextCh();
@@ -356,7 +360,7 @@ class Scanner {
                 // Expected a ' ; report error and try to
                 // recover.
                 reportScannerError(ch
-                        + " found by scanner where closing ' was expected.");
+				   + " found by scanner where closing ' was expected.");
                 while (ch != '\'' && ch != ';' && ch != '\n') {
                     nextCh();
                 }
@@ -386,14 +390,270 @@ class Scanner {
             }
             return new TokenInfo(STRING_LITERAL, buffer.toString(), line);
         case '.':
+	    alredy_have_dot = true;
+	    buffer = new StringBuffer();
+	    buffer.append('0');
+	    buffer.append(ch);
+	    nextCh();
+	    while (belongsToFloatOrDuble(ch)) { 
+		// case of  dot char
+		if (ch == '.' && alredy_have_dot) {
+		    reportScannerError("two dots in a number: '%c'", ch);
+		    nextCh();
+		    return getNextToken();
+		}
+		if (ch == '.' && !alredy_have_dot) {
+		    buffer.append(ch);
+		    alredy_have_dot = true;
+		    nextCh();
+		    continue;
+		}
+		// case of e or E		    
+		if((ch == 'e' || ch == 'E') && already_have_E_or_e) {
+		    reportScannerError("two e or E in a number: '%c'", ch);
+		    nextCh();
+		    return getNextToken();
+		}
+		if ((ch == 'e' || ch == 'E') && !already_have_E_or_e) {
+		    buffer.append(ch);
+		    already_have_E_or_e = true;
+		    nextCh();
+		    continue;
+		}
+		// case of another p or P		    
+		if ((ch == 'p' || ch == 'P') && already_have_P_or_p) {
+		    reportScannerError("two P or p in a number: '%c'", ch);
+		    nextCh();
+		    return getNextToken();
+		}
+		if ((ch == 'p' || ch == 'P') && !already_have_P_or_p) {
+		    buffer.append(ch);
+		    already_have_P_or_p = true;
+		    nextCh();
+		    continue;
+		}
+		// case of another + or -		    
+		if ((ch == '+' || ch == '-') && already_have_Plus_Or_Minus) {
+		    reportScannerError("two P or p in a number: '%c'", ch);
+		    nextCh();
+		    return getNextToken();
+		}
+		if ((ch == '+' || ch == '-') && !already_have_Plus_Or_Minus) {
+		    buffer.append(ch);
+		    already_have_Plus_Or_Minus = true;
+		    nextCh();
+		    continue;
+
+		}
+		// float terminating character
+		if (ch == 'f' || ch == 'F') {
+		    buffer.append(ch);
+		    nextCh();
+		    return new TokenInfo(FLOAT_LITERAL, buffer.toString(), line);
+		}
+		// double terminating character
+		if (ch == 'd' || ch == 'D') {
+		    buffer.append(ch);
+		    nextCh();
+		    return new TokenInfo(DOUBLE_LITERAL, buffer.toString(), line);
+		}
+		
+		buffer.append(ch);
+		nextCh();
+	    }
             nextCh();
             return new TokenInfo(DOT, line);
         case EOFCH:
             return new TokenInfo(EOF, line);
+	    // 0 can start any numeric literal
         case '0':
-            // Handle only simple decimal integers for now.
+	    buffer = new StringBuffer();
             nextCh();
-            return new TokenInfo(INT_LITERAL, "0", line);
+	    
+	    // int hexadecimal
+	    if (ch == 'X' || ch == 'x') {
+		nextCh();
+		while (isHexDigit(ch) || ch == '.') {
+		    if (alredy_have_dot && ch == '.') {
+			nextCh();
+			reportScannerError("two dots in a float hex number");
+		    }
+		    if (ch == '.') {
+			alredy_have_dot = true;
+			buffer.append('0');
+		    }
+		    buffer.append(ch);
+		    nextCh();
+		    while (belongsToFloatOrDuble(ch) ) { 
+			// case of  dot char
+			if (ch == '.' && alredy_have_dot) {
+			    reportScannerError("two dots in a number: '%c'", ch);
+			    nextCh();
+			    return getNextToken();
+			}
+
+			if ((ch == 'p' || ch == 'P') && already_have_P_or_p) {
+			    reportScannerError("two P or p in a number: '%c'", ch);
+			    nextCh();
+			    return getNextToken();
+			}
+			if ((ch == 'p' || ch == 'P') && !already_have_P_or_p) {
+			    buffer.append(ch);
+			    already_have_P_or_p = true;
+			    nextCh();
+			    continue;
+			}
+			// case of another + or -		    
+			if ((ch == '+' || ch == '-') && already_have_Plus_Or_Minus) {
+			    reportScannerError("two P or p in a number: '%c'", ch);
+			    nextCh();
+			    return getNextToken();
+			}
+			if ((ch == '+' || ch == '-') && !already_have_Plus_Or_Minus) {
+			    buffer.append(ch);
+			    already_have_Plus_Or_Minus = true;
+			    nextCh();
+			    continue;
+
+			}
+			buffer.append(ch);
+			nextCh();
+		    }
+		    return new TokenInfo(FLOAT_LITERAL, buffer.toString(), line);				    
+		}
+		return new TokenInfo(HEX_INT_LITERAL, buffer.toString(), line); // add this to the TokenInfo
+	    }
+	    // octal
+	    if (isOctalDigit(ch)) {
+		buffer.append(ch);
+		nextCh();
+		while (isOctalDigit(ch)) { //      add isOctalDigit(ch) method 
+		    buffer.append(ch);
+		    nextCh();
+		}
+		return new TokenInfo(OCT_INT_LITERAL, buffer.toString(), line); // add this to the TokenInfo
+		
+	    }
+	    // simple case of 0l or 0L zero long literal
+	    else if (ch == 'l' || ch == 'L') {
+		nextCh();
+		return new TokenInfo(LONG_LITERAL, "0L", line); // add this to the Token INFO
+	    }
+	    // 0f or 0F case
+	    else if (ch == 'f' || ch == 'F') {
+		buffer.append('0');
+		buffer.append(ch);
+		nextCh();
+		//		System.out.println("here 1");
+		return new TokenInfo(FLOAT_LITERAL, buffer.toString(), line);
+	    }
+	    // 0d or 0D case
+	    else if (ch == 'd' || ch == 'D') {
+		buffer.append('0');		
+		buffer.append(ch);
+		nextCh();
+		return new TokenInfo(DOUBLE_LITERAL, buffer.toString(), line);
+	    }
+	    
+	    // . may start double or float
+	    else if (ch == '.') {
+		alredy_have_dot = true;
+		buffer.append('0');		
+		buffer.append(ch);
+		nextCh();
+		while (belongsToFloatOrDuble(ch) || ch == '.') { 
+		    // case of  dot char
+		    if (ch == '.' && alredy_have_dot) {
+			reportScannerError("two dots in a number: '%c'", ch);
+			nextCh();
+			return getNextToken();
+		    }
+		    if (ch == '.' && !alredy_have_dot) {
+			buffer.append(ch);
+			alredy_have_dot = true;
+			nextCh();
+			continue;
+		    }
+		    // case of e or E		    
+		    if((ch == 'e' || ch == 'E') && already_have_E_or_e) {
+			reportScannerError("two e or E in a number: '%c'", ch);
+			nextCh();
+			return getNextToken();
+		    }
+		    if ((ch == 'e' || ch == 'E') && !already_have_E_or_e) {
+			buffer.append(ch);
+			already_have_E_or_e = true;
+			nextCh();
+			continue;
+		    }
+		    // case of another p or P		    
+		    if ((ch == 'p' || ch == 'P') && already_have_P_or_p) {
+			reportScannerError("two P or p in a number: '%c'", ch);
+			nextCh();
+			return getNextToken();
+		    }
+		    if ((ch == 'p' || ch == 'P') && !already_have_P_or_p) {
+			buffer.append(ch);
+			already_have_P_or_p = true;
+			nextCh();
+			continue;
+		    }
+		    // case of another + or -		    
+		    if ((ch == '+' || ch == '-') && already_have_Plus_Or_Minus) {
+			reportScannerError("two P or p in a number: '%c'", ch);
+			nextCh();
+			return getNextToken();
+		    }
+		    if ((ch == '+' || ch == '-') && !already_have_Plus_Or_Minus) {
+			buffer.append(ch);
+			already_have_Plus_Or_Minus = true;
+			nextCh();
+			continue;
+
+		    }
+		    // float terminating character
+		    if (ch == 'f' || ch == 'F') {
+			buffer.append(ch);
+			nextCh();
+			return new TokenInfo(FLOAT_LITERAL, buffer.toString(), line);
+		    }
+		    // double terminating character
+		    if (ch == 'd' || ch == 'D') {
+			buffer.append(ch);
+			nextCh();
+			return new TokenInfo(DOUBLE_LITERAL, buffer.toString(), line);
+		    }
+		
+		    if (isDigit(ch)) {
+			buffer.append(ch);
+			nextCh();
+			continue;
+		    }
+		    else  {
+			reportScannerError("strange fractional number: '%c'", ch);
+			nextCh();
+			return getNextToken();
+		    }
+		}
+	    
+		// float terminating character
+		if (ch == 'f' || ch == 'F') {
+		    buffer.append(ch);		    
+		    return new TokenInfo(FLOAT_LITERAL, buffer.toString(), line);
+		}
+		// double terminating character
+		if (ch == 'd' || ch == 'D') {
+		    buffer.append(ch);		    
+		    return new TokenInfo(DOUBLE_LITERAL, buffer.toString(), line);
+		}
+		else  {
+		    reportScannerError("strange fractional number: '%c'", ch);
+		    nextCh();
+		    return getNextToken();
+		}
+	    }
+	    //	    System.out.println("here");
+            return new TokenInfo(INT_LITERAL, "0", line);	    
         case '1':
         case '2':
         case '3':
@@ -404,10 +664,93 @@ class Scanner {
         case '8':
         case '9':
             buffer = new StringBuffer();
-            while (isDigit(ch)) {
+	    char t_c = ch;
+	    buffer.append(ch);
+	    nextCh();
+	    while (belongsToFloatOrDuble(ch) || ch == '.') { 
+		// case of  dot char
+		if (ch == '.' && alredy_have_dot) {
+		    reportScannerError("two dots in a number: '%c'", ch);
+		    nextCh();
+		    return getNextToken();
+		}
+		if (ch == '.' && !alredy_have_dot) {
+		    buffer.append(ch);
+		    alredy_have_dot = true;
+		    nextCh();
+		    continue;
+		}
+		// case of e or E		    
+		if((ch == 'e' || ch == 'E') && already_have_E_or_e) {
+		    reportScannerError("two e or E in a number: '%c'", ch);
+		    nextCh();
+		    return getNextToken();
+		}
+		if ((ch == 'e' || ch == 'E') && !already_have_E_or_e) {
+		    buffer.append(ch);
+		    already_have_E_or_e = true;
+		    nextCh();
+		    continue;
+		}
+		// case of another p or P		    
+		if ((ch == 'p' || ch == 'P') && already_have_P_or_p) {
+		    reportScannerError("two P or p in a number: '%c'", ch);
+		    nextCh();
+		    return getNextToken();
+		}
+		if ((ch == 'p' || ch == 'P') && !already_have_P_or_p) {
+		    buffer.append(ch);
+		    already_have_P_or_p = true;
+		    nextCh();
+		    continue;
+		}
+		// case of another + or -		    
+		if ((ch == '+' || ch == '-') && already_have_Plus_Or_Minus) {
+		    reportScannerError("two P or p in a number: '%c'", ch);
+		    nextCh();
+		    return getNextToken();
+		}
+		if ((ch == '+' || ch == '-') && !already_have_Plus_Or_Minus) {
+		    buffer.append(ch);
+		    already_have_Plus_Or_Minus = true;
+		    nextCh();
+		    continue;
+
+		}
+		// float terminating character
+		if (ch == 'f' || ch == 'F') {
+		    buffer.append(ch);
+		    nextCh();
+		    return new TokenInfo(FLOAT_LITERAL, buffer.toString(), line);
+		}
+		// double terminating character
+		if (ch == 'd' || ch == 'D') {
+		    buffer.append(ch);
+		    nextCh();
+		    return new TokenInfo(DOUBLE_LITERAL, buffer.toString(), line);
+		}
+		
+		if (isDigit(ch)) {
+		    buffer.append(ch);
+		    nextCh();
+		    continue;
+		}
+		else  {
+		    reportScannerError("strange fractional number: '%c'", ch);
+		    nextCh();
+		    return getNextToken();
+		}
+	    }
+	    
+            while (isDigit(ch) || ch == 'l' || ch == 'L') {
                 buffer.append(ch);
-                nextCh();
+		t_c = ch;
+		nextCh();
+		if (t_c == 'l' || t_c == 'L') {
+		    return new TokenInfo(LONG_LITERAL, buffer.toString(), line);
+		}
             }
+	    if (alredy_have_dot) return new TokenInfo(DOUBLE_LITERAL, buffer.toString(), line);
             return new TokenInfo(INT_LITERAL, buffer.toString(), line);
         default:
             if (isIdentifierStart(ch)) {
@@ -512,6 +855,43 @@ class Scanner {
         return (c >= '0' && c <= '9');
     }
 
+    /**
+     * Return true if the specified character is a valid hexadecimal digit (0-9 || a-f); false otherwise.
+     * 
+     * @param c
+     *            character.
+     * @return true or false.
+     */
+
+    private boolean isHexDigit(char c) {
+        return ((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'));
+    }
+
+    /**
+     * Return true if the specified character is a valid part of float or double format, false otherwise.
+     * 
+     * @param c
+     *            character.
+     * @return true or false.
+     */
+
+    private boolean belongsToFloatOrDuble(char c) {
+        return (isHexDigit(c) || c == 'e' || c == 'E' || c == 'p' || c == 'P' || c == '+' || c == '-');
+    }
+
+    
+    /**
+     * Return true if the specified character is a valid octal digit (0-7); false otherwise.
+     * 
+     * @param c
+     *            character.
+     * @return true or false.
+     */
+
+    private boolean isOctalDigit(char c) {
+        return (c >= '0' && c <= '7');
+    }
+    
     /**
      * Return true if the specified character is a whitespace; false otherwise.
      * 
