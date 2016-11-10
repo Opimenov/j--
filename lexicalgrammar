@@ -1,0 +1,99 @@
+// Lexical grammar for j--
+// Copyright 2013 Bill Campbell, Swami Iyer and Bahar Akbal-Delibas
+
+// Whitespace -- ignored
+" "|"\t"|"\n"|"\r"|"\f"
+
+// Single line comment -- ignored
+"//" {~("\n"|"\r")} ("\n"|"\r"["\n"])
+
+// Reserved words
+ABSTRACT    ::= "abstract"
+BOOLEAN     ::= "boolean"
+CHAR        ::= "char"
+CLASS       ::= "class"
+ELSE        ::= "else"
+EXTENDS     ::= "extends"
+FALSE       ::= "false"
+IF          ::= "if"
+IMPORT      ::= "import"
+INSTANCEOF  ::= "instanceof"
+INT         ::= "int"
+NEW         ::= "new"
+NULL        ::= "null"
+PACKAGE     ::= "package"
+PRIVATE     ::= "private"
+PROTECTED   ::= "protected"
+PUBLIC      ::= "public"
+RETURN      ::= "return"
+STATIC      ::= "static"
+SUPER       ::= "super"
+THIS        ::= "this"
+TRUE        ::= "true"
+VOID        ::= "void"
+WHILE       ::= "while"
+
+// Operators
+ASSIGN      ::= "="
+BITAND	    ::= "&"  
+BITOR	    ::= "|"  
+BITXOR	    ::= "^"  
+DIV	    ::= "/"
+EQUAL       ::= "=="
+GT          ::= ">"
+LT          ::= "<"  
+INC         ::= "++"
+LAND        ::= "&&"
+LE          ::= "<="
+GE          ::= ">="  
+LNOT        ::= "!"
+MINUS       ::= "-"
+MOD	    ::= "%"
+PLUS        ::= "+"
+PLUS_ASSIGN ::= "+=" 
+MINUS_ASSIGN ::= "-=" 
+STAR_ASSIGN ::= "*=" 
+STAR        ::= "*"
+Q_MARK	    ::= "?" 
+L_SHIFT	    ::= "<<" 
+R_SHIFT	    ::= ">>" 
+DEC	    ::= "--" 
+COMPLEM	    ::= "~"  
+NOT_EQUAL   ::= "!=" 
+MOD_ASSIGN  ::= "%=" 
+BITXOR_ASSING ::= "^="  
+DIV_ASSIGN    ::= "/="  
+L_SHIFT_ASSIGN ::= "<<="  
+R_SHIFT_ASSIGN ::= ">>="  
+BITOR_ASSIGN   ::= "|="   
+UNS_R_SHIFT    ::= ">>>"  
+L_OR	       ::= "||"   
+UNS_R_SHIFT_ASSIGN   ::= ">>>="  
+BITAND_ASSIGN	     ::= "&="
+
+
+
+// Separators
+COMMA       ::= ","
+DOT         ::= "."
+LBRACK      ::= "["
+LCURLY      ::= "{"
+LPAREN      ::= "("
+RBRACK      ::= "]"
+RCURLY      ::= "}"
+RPAREN      ::= ")"
+SEMI        ::= ";"
+
+// Identifiers
+IDENTIFIER ::= ("a"-"z"|"A"-"Z"|"_"|"$") {"a"-"z"|"A"-"Z"|"_"|"0"-"9"|"$"}
+
+// Literals
+INT_LITERAL    ::= "0" | ("1"-"9") {"0"-"9"}
+ESC            ::= "\\" ("n"|"r"|"t"|"b"|"f"|"'"|"\""|"\\")
+STRING_LITERAL ::= "\"" {ESC | ~("\""|"\\"|"\n"|"\r")} "\""
+CHAR_LITERAL   ::= "'" (ESC | ~("'"|"\n"|"\r"|"\\")) "'"
+
+// End of file
+EOF            ::= "<end of file>"
+
+

@@ -1,0 +1,105 @@
+/** **********************************************************************
+ *    Oleksandr Pimenov
+ *    Scanner feed to test:
+ *
+ ************************************************************************    
+ *       1. single and multiline comments
+ ***********************************************************************/
+
+// single line
+
+/* single line but multiline */
+
+/*
+  multiline
+*/
+
+/* tricky // */
+
+/***********************************************************************
+ *                 2. all java operators
+***********************************************************************/
+
+? -= << = -- <<= == * <= ! *= < ~ % ^ != %= ^= / >> | /= >>= |= +
+>>> || += >>>= & ++ >= &= - > &&
+
+/***********************************************************************
+ *                 3. all java keywords
+***********************************************************************/
+				 
+abstract boolean break byte case catch char class const continue default
+do double else extends false final finally float for goto if import
+implements instanceof int interface long native new null package private
+protected public return short static strictfp super switch synchronized
+ this throw throws transient try true void volatile while 
+
+/***********************************************************************
+ *                 4. numeric and string literals
+***********************************************************************/
+
+// decimal int
+0   
+95
+100
+				 
+// hexadeciaml int
+0X9a  
+0xF0a   
+0X2C2D 
+0xfFf
+
+// octal  int
+00  
+013   
+0100
+   
+// long
+0l  
+0L   
+1l 
+1L   
+2L   
+95l  
+100L
+
+// float decimal
+2f
+0f				 
+91.9e+91f 
+90.01E-10F 
+0.8f 
+0.8F 
+2e+8f 
+3E-7F 
+3e5f 
+.8f 
+.3e10f
+				 
+// float hexadecimal
+//problem in following 3 numbers
+0x.9af
+0X.09fp+55f 
+0x.09FP+55F
+				 
+0x8af 
+0X8fp+55f 
+0x8FP+55F 			 
+				 
+// double
+0d				 
+8d 
+8.1 
+8.2e+44d 
+8.2E-33D 
+0.1d 
+0.2D 
+8.2d 
+7.1e+10d 
+.2d 
+.3e+9d
+
+
+/***********************************************************************
+ *                 5. char and string literals
+***********************************************************************/
+'c' "Hello, World"  key4U2myroom 

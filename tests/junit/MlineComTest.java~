@@ -1,0 +1,12 @@
+package junit;
+
+import junit.framework.TestCase;
+import pass.MlineCom;
+
+public class MlineCom extends TestCase {
+
+    public void testMlineComOK() {
+        this.assertEquals(MlineCom.testo(), "OK");
+    }
+
+}

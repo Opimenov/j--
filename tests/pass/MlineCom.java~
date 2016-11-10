@@ -1,0 +1,19 @@
+package pass;
+//  /* ignore this line */
+import java.lang.System;
+//  /*
+//  ignore this line as well
+//  and this line
+//  */  
+public class MlineCom {
+    //this one is tricky because // will ignore the rest
+    //of the line
+    //    /* how about this line // ??? */
+    public static String testo() {
+	return "OK";
+    }
+    public static void main(String[] args) {
+        System.out.println(MlineCom.testo());
+    }
+
+}

@@ -1,0 +1,11 @@
+package pass;
+
+public class UPlus {
+    public int isInt(int x) {
+	return x;
+    }
+    public static void main(String[] args) {
+	private UPlus up = new UPlus();
+	System.out.println(isInt(15));
+    }
+}

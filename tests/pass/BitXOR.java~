@@ -1,0 +1,7 @@
+package pass;
+
+public class BitXOR {
+    public int bitAND(int x, int y) {
+	return x ^ y;
+    }
+}

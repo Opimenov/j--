@@ -1,0 +1,7 @@
+package pass;
+
+public class BitAND {
+    public int bitAND(int x, int y) {
+	return x & y;
+    }
+}
