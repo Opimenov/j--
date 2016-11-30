@@ -86,8 +86,13 @@ class JNegateOp extends JUnaryExpression {
 
     public JExpression analyze(Context context) {
         arg = arg.analyze(context);
-        arg.type().mustMatchExpected(line(), Type.INT);
-        type = Type.INT;
+	if (arg.type() == Type.INT) {
+	    arg.type().mustMatchExpected(line(), Type.INT);
+	    type = Type.INT;
+	} else {
+	    arg.type().mustMatchExpected(line(), Type.LONG);
+	    type = Type.LONG;
+	}
         return this;
     }
 
@@ -102,7 +107,10 @@ class JNegateOp extends JUnaryExpression {
 
     public void codegen(CLEmitter output) {
         arg.codegen(output);
-        output.addNoArgInstruction(INEG);
+	if (type == Type.INT)
+	    output.addNoArgInstruction(INEG);
+	else
+	    output.addNoArgInstruction(LNEG);
     }
 
 }
@@ -143,8 +151,13 @@ class JUPlusOp extends JUnaryExpression {
 
     public JExpression analyze(Context context) {
         arg = arg.analyze(context);
-        arg.type().mustMatchExpected(line(), Type.INT); //arg must be INT
-        type = Type.INT; //return type is INT
+	if (arg.type() == Type.INT) {
+	    arg.type().mustMatchExpected(line(), Type.INT); 
+	    type = Type.INT; 
+	} else { //then it must be a long
+	    arg.type().mustMatchExpected(line(), Type.LONG); 
+	    type = Type.LONG; 
+	}
         return this;
     }
 
@@ -271,9 +284,14 @@ class JPostDecrementOp extends JUnaryExpression {
             type = Type.ANY;
         } else {
             arg = (JExpression) arg.analyze(context);
-            arg.type().mustMatchExpected(line(), Type.INT);
-            type = Type.INT;
-        }
+	    if (arg.type() == Type.INT) {
+		arg.type().mustMatchExpected(line(), Type.INT); 
+		type = Type.INT; 
+	    } else { //then it must be a long
+		arg.type().mustMatchExpected(line(), Type.LONG); 
+		type = Type.LONG; 
+	    }
+	}
         return this;
     }
 
@@ -309,8 +327,13 @@ class JPostDecrementOp extends JUnaryExpression {
                 // Loading its original rvalue
                 ((JLhs) arg).codegenDuplicateRvalue(output);
             }
-            output.addNoArgInstruction(ICONST_1);
-            output.addNoArgInstruction(ISUB);
+	    if (arg.type() == Type.INT) {
+		output.addNoArgInstruction(ICONST_1);
+		output.addNoArgInstruction(ISUB);
+	    } else { //then it must be a long
+		output.addNoArgInstruction(LCONST_1);
+		output.addNoArgInstruction(LSUB);
+	    }	   
             ((JLhs) arg).codegenStore(output);
         }
     }

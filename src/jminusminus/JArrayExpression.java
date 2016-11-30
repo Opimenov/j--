@@ -57,7 +57,13 @@ class JArrayExpression
         } else {
             this.type = theArray.type().componentType();
         }
-        indexExpr.type().mustMatchExpected(line(), Type.INT);
+	//was single line
+	//  indexExpr.type().mustMatchExpected(line(), Type.INT);
+	//added two if statements
+	if (indexExpr.type() == Type.INT)
+	    indexExpr.type().mustMatchExpected(line(), Type.INT);
+	if (indexExpr.type() == Type.LONG)
+	    indexExpr.type().mustMatchExpected(line(), Type.LONG);
         return this;
     }
 
@@ -91,7 +97,9 @@ class JArrayExpression
             output.addNoArgInstruction(IALOAD);
 	} else if (type == Type.BOOLEAN) {
             output.addNoArgInstruction(BALOAD);
-	} else if (type == Type.CHAR) {
+	}else if (type == Type.LONG) {
+            output.addNoArgInstruction(LALOAD);
+	}else if (type == Type.CHAR) {
             output.addNoArgInstruction(CALOAD);
         } else if (!type.isPrimitive()) {
             output.addNoArgInstruction(AALOAD);
@@ -136,6 +144,8 @@ class JArrayExpression
         }
 	if (type == Type.INT) {
 	    output.addNoArgInstruction(IALOAD);
+	} else if (type == Type.LONG) {
+	    output.addNoArgInstruction(LALOAD);
 	} else if (type == Type.BOOLEAN) {
 	    output.addNoArgInstruction(BALOAD);
 	} else if (type == Type.CHAR) {
@@ -174,6 +184,8 @@ class JArrayExpression
     public void codegenStore(CLEmitter output) {
 	if (type == Type.INT) {
 	    output.addNoArgInstruction(IASTORE);
+	} else if (type == Type.LONG) {
+	    output.addNoArgInstruction(LASTORE);
 	} else if (type == Type.BOOLEAN) {
 	    output.addNoArgInstruction(BASTORE);
 	} else if (type == Type.CHAR) {

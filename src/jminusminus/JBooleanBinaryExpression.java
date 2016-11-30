@@ -115,9 +115,31 @@ class JEqualOp extends JBooleanBinaryExpression {
 		if (lhs.type().isReference()) {
 			output.addBranchInstruction(onTrue ? IF_ACMPEQ : IF_ACMPNE,
 					targetLabel);
-		} else {
-			output.addBranchInstruction(onTrue ? IF_ICMPEQ : IF_ICMPNE,
+		} else if (lhs.type() == Type.LONG) {
+		    //////////////////////////////
+		    //           compare two longs they should be on the stack at this time
+		    //           If value1 is greater than value2, the int value 1 is pushed
+		    //           If value1 is equal to value2,       the int value 0 is pushed 
+		    //            If value1 is less than value2, the int value -1 is pushed
+		    output.addNoArgInstruction(LCMP);		    
+		    //            Then we add conditional branch based on that value
+		    /*
+		                  ifeq succeeds if and only if value = 0
+				  ifne succeeds if and only if value ≠ 0
+				  iflt succeeds if and only if value < 0
+				  ifle succeeds if and only if value ≤ 0
+				  ifgt succeeds if and only if value > 0
+				  ifge succeeds if and only if value ≥ 0
+		    */
+		    ///////////////////////////////////////
+		    // since this is equal operation, zero will be on the stack after LCMP if operands are equal
+		    // so we can branch using IFEQ and IFNE instructions
+			output.addBranchInstruction(onTrue ? IFEQ : IFNE,
 					targetLabel);
+		}
+		else  {//must be INT
+		    output.addBranchInstruction(onTrue ? IF_ICMPEQ : IF_ICMPNE,
+						targetLabel);
 		}
 	}
 
@@ -207,12 +229,18 @@ class JLogicalOrOp extends JBooleanBinaryExpression {
 		return this;
 	}
 	public void codegen(CLEmitter output, String targetLabel, boolean onTrue) {
-		
+	    String falseLabel = output.createLabel();		    	    
+	    if (onTrue) {
+		lhs.codegen(output, targetLabel, true);
+		rhs.codegen(output, targetLabel, true);
+		output.addLabel(falseLabel);
+	    } else {
+		lhs.codegen(output, targetLabel, false);
+		rhs.codegen(output, targetLabel, false);
+		output.addLabel(falseLabel);
+	    }
 	}
 }
-/******************************************************************************
-ADDING BINARYAND XOR AND OR BELOW THIS LINE
- ******************************************************************************/
 /**
  * The AST node for a bitwise AND (&) expression.
  */
@@ -248,9 +276,15 @@ class JBitwiseAndOp extends JBooleanBinaryExpression {
 	public JExpression analyze(Context context) {
 		lhs = (JExpression) lhs.analyze(context);
 		rhs = (JExpression) rhs.analyze(context);
-		lhs.type().mustMatchExpected(line(), Type.INT);
-		rhs.type().mustMatchExpected(line(), Type.INT);
-		type = Type.INT;
+		if (lhs.type() == Type.INT) {
+		    lhs.type().mustMatchExpected(line(), Type.INT);
+		    rhs.type().mustMatchExpected(line(), Type.INT);
+		    type = Type.INT;
+		} else if (lhs.type() == Type.LONG) {
+		    lhs.type().mustMatchExpected(line(), Type.LONG);
+		    rhs.type().mustMatchExpected(line(), Type.LONG);
+		    type = Type.LONG;
+		}
 		return this;
 	}
 
@@ -266,9 +300,11 @@ class JBitwiseAndOp extends JBooleanBinaryExpression {
 	public void codegen(CLEmitter output) {
 		lhs.codegen(output);
 		rhs.codegen(output);
-		output.addNoArgInstruction(IAND);
+		if (type == Type.INT)
+		    output.addNoArgInstruction(IAND);
+		else if (type == Type.LONG)
+		    output.addNoArgInstruction(LAND);
 	}
-
 }
 /**
  * The AST node for a bitwise XOR (^) expression.
@@ -305,9 +341,15 @@ class JBitwiseXorOp extends JBooleanBinaryExpression {
 	public JExpression analyze(Context context) {
 		lhs = (JExpression) lhs.analyze(context);
 		rhs = (JExpression) rhs.analyze(context);
-		lhs.type().mustMatchExpected(line(), Type.INT);
-		rhs.type().mustMatchExpected(line(), Type.INT);
-		type = Type.INT;
+		if (lhs.type() == Type.INT) {
+		    lhs.type().mustMatchExpected(line(), Type.INT);
+		    rhs.type().mustMatchExpected(line(), Type.INT);
+		    type = Type.INT;
+		} else if (lhs.type() == Type.LONG) {
+		    lhs.type().mustMatchExpected(line(), Type.LONG);
+		    rhs.type().mustMatchExpected(line(), Type.LONG);
+		    type = Type.LONG;
+		}
 		return this;
 	}
 
@@ -323,9 +365,11 @@ class JBitwiseXorOp extends JBooleanBinaryExpression {
 	public void codegen(CLEmitter output) {
 		lhs.codegen(output);
 		rhs.codegen(output);
-		output.addNoArgInstruction(IXOR);
+		if (type == Type.INT)
+		    output.addNoArgInstruction(IXOR);
+		else if (type == Type.LONG)
+		    output.addNoArgInstruction(LXOR);
 	}
-
 }
 /**
  * The AST node for a bitwise OR (|) expression.
@@ -362,9 +406,15 @@ class JBitwiseOrOp extends JBooleanBinaryExpression {
 	public JExpression analyze(Context context) {
 		lhs = (JExpression) lhs.analyze(context);
 		rhs = (JExpression) rhs.analyze(context);
-		lhs.type().mustMatchExpected(line(), Type.INT);
-		rhs.type().mustMatchExpected(line(), Type.INT);
-		type = Type.INT;
+		if (lhs.type() == Type.INT) {
+		    lhs.type().mustMatchExpected(line(), Type.INT);
+		    rhs.type().mustMatchExpected(line(), Type.INT);
+		    type = Type.INT;
+		} else if (lhs.type() == Type.LONG) {
+		    lhs.type().mustMatchExpected(line(), Type.LONG);
+		    rhs.type().mustMatchExpected(line(), Type.LONG);
+		    type = Type.LONG;
+		}
 		return this;
 	}
 
@@ -380,12 +430,15 @@ class JBitwiseOrOp extends JBooleanBinaryExpression {
 	public void codegen(CLEmitter output) {
 		lhs.codegen(output);
 		rhs.codegen(output);
-		output.addNoArgInstruction(IOR);
+		if (type == Type.INT)
+		    output.addNoArgInstruction(IOR);
+		else if (type == Type.LONG)
+		    output.addNoArgInstruction(LOR);
 	}
-
 }
 
-/******************************************************************************
 
-ADDING BINARYAND XOR AND OR ABOVE THIS LINE
- ******************************************************************************/
+
+
+
+

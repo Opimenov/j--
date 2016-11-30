@@ -642,7 +642,7 @@ public class Parser {
 		ArrayList<JStatement> statements = new ArrayList<JStatement>();
 		mustBe(LCURLY);
 		while (!see(RCURLY) && !see(EOF)) {
-			statements.add(blockStatement());
+		    statements.add(blockStatement());
 		}
 		mustBe(RCURLY);
 		return new JBlock(line, statements);
@@ -751,6 +751,9 @@ public class Parser {
 			 */
 			JExpression parExpr = parExpression();
 			mustBe(LCURLY);
+			////
+			/// do the while not see RCURLY add switchBlock..... to the arrayList
+			///
 			if (!have(RCURLY)) stGroup= switchBlockStatementGroup();
 			mustBe(RCURLY);
 			return new JSwitchStatement(line, parExpr, stGroup);
@@ -894,8 +897,14 @@ public class Parser {
 			switchLabelsList.add(switchLabel());
 			if (!see(CASE)) more = false;
 		}
-		JStatement switchBlockStatement = blockStatement();
-		return new JSwitchBlockStatementGroup(line, switchLabelsList, switchBlockStatement);
+		more = true;
+		ArrayList <JStatement> switchBlockStatements =  new ArrayList<>();
+		while (more) {
+		    switchBlockStatements.add(blockStatement());
+			if (!see(CASE)) more = false;
+		}
+		return new JSwitchBlockStatementGroup(line, switchLabelsList,
+						      switchBlockStatements);
 	}
 	/** 
 	 * switchLabel ::= CASE expression COL | DEFAULT COL
@@ -945,6 +954,7 @@ public class Parser {
 	 */
 
 	private ArrayList<JVariableDeclarator> variableDeclarators(Type type) {
+	    //	    System.out.println(type);
 		ArrayList<JVariableDeclarator> variableDeclarators = new ArrayList<JVariableDeclarator>();
 		do {
 			variableDeclarators.add(variableDeclarator(type));

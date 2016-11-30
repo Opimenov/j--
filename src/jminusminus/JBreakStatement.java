@@ -27,7 +27,7 @@ class JBreakStatement
         // method,
         // we don't check for methodContext being null
 
-/*        if (methodContext.methodReturnType() == Type.CONSTRUCTOR) {
+        if (methodContext.methodReturnType() == Type.CONSTRUCTOR) {
             if (expr != null) {
                 // Can't return a value from a constructor
                 JAST.compilationUnit.reportSemanticError(line(),
@@ -57,12 +57,12 @@ class JBreakStatement
                         "missing return value");
                 }
             }
-	    }   */
+	}   
         return this;
     }
 
     public void codegen(CLEmitter output) {
-/*        if (expr == null) {
+        if (expr == null) {
             output.addNoArgInstruction(RETURN);
         } else {
             expr.codegen(output);
@@ -70,11 +70,12 @@ class JBreakStatement
                 || expr.type() == Type.BOOLEAN
                 || expr.type() == Type.CHAR) {
                 output.addNoArgInstruction(IRETURN);
-            } else {
+            } else if (expr.type() == Type.LONG) {
+                output.addNoArgInstruction(LRETURN);		
+	    }else {
                 output.addNoArgInstruction(ARETURN);
             }
         }
-*/
     }
 
     public void writeToStdOut(PrettyPrinter p) {

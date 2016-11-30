@@ -46,6 +46,7 @@ class JNewArrayOp extends JExpression {
 
     public JExpression analyze(Context context) {
         type = typeSpec.resolve(context);
+
         for (int i = 0; i < dimExprs.size(); i++) {
             dimExprs.set(i, dimExprs.get(i).analyze(context));
             dimExprs.get(i).type().mustMatchExpected(line, Type.INT);

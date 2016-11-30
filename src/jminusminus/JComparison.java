@@ -41,9 +41,15 @@ abstract class JComparison extends JBooleanBinaryExpression {
     public JExpression analyze(Context context) {
         lhs = (JExpression) lhs.analyze(context);
         rhs = (JExpression) rhs.analyze(context);
-        lhs.type().mustMatchExpected(line(), Type.INT);
-        rhs.type().mustMatchExpected(line(), lhs.type());
-        type = Type.BOOLEAN;
+	if (lhs.type() == Type.INT) {
+	    lhs.type().mustMatchExpected(line(), Type.INT);
+	    rhs.type().mustMatchExpected(line(), lhs.type());
+	    type = Type.BOOLEAN;
+	} else {
+	    lhs.type().mustMatchExpected(line(), Type.LONG);
+	    rhs.type().mustMatchExpected(line(), lhs.type());
+	    type = Type.BOOLEAN;
+	}
         return this;
     }
 
@@ -88,11 +94,33 @@ class JGreaterThanOp extends JComparison {
     public void codegen(CLEmitter output, String targetLabel, boolean onTrue) {
         lhs.codegen(output);
         rhs.codegen(output);
-        output
+	if (lhs.type() == Type.INT) {
+	    output
                 .addBranchInstruction(onTrue ? IF_ICMPGT : IF_ICMPLE,
                         targetLabel);
+	} 
+	else // must be LONG then since we allow only INT or LONG type
+	    {
+		    //////////////////////////////
+		    //           compare two longs they should be on the stack at this time
+		    //           If value1 is greater than value2, the int value 1 is pushed
+		    output.addNoArgInstruction(LCMP);		    
+		    //            Then we add conditional branch based on that value
+		    /*
+		                  ifeq succeeds if and only if value = 0
+				  ifne succeeds if and only if value ≠ 0
+				  iflt succeeds if and only if value < 0
+				  ifle succeeds if and only if value ≤ 0
+				  ifgt succeeds if and only if value > 0
+				  ifge succeeds if and only if value ≥ 0
+		    */
+		    ///////////////////////////////////////
+		    // since this is greater operation, 1 will be on the stack after LCMP if v1 > v2
+		    // so we can branch using IFGT and IFLE instructions
+			output.addBranchInstruction(onTrue ? IFGT : IFLE,
+					targetLabel);
+	    }
     }
-
 }
 
 /**
@@ -134,9 +162,30 @@ class JLessEqualOp extends JComparison {
     public void codegen(CLEmitter output, String targetLabel, boolean onTrue) {
         lhs.codegen(output);
         rhs.codegen(output);
-        output
-                .addBranchInstruction(onTrue ? IF_ICMPLE : IF_ICMPGT,
+		if (lhs.type() == Type.INT) {
+	    output
+                .addBranchInstruction(onTrue ? IF_ICMPGT : IF_ICMPLE,
                         targetLabel);
+	} 
+	else // must be LONG then
+	    {
+		    //////////////////////////////
+		    //           compare two longs they should be on the stack at this time
+		    //           If value1 is equal to value2,       the int value 0 is pushed 
+		    //           If value1 is less than value2,      the int value -1 is pushed
+		    output.addNoArgInstruction(LCMP);		    
+		    //            Then we add conditional branch based on that value
+		    /*
+		                  ifeq succeeds if and only if value = 0
+				  ifne succeeds if and only if value ≠ 0
+				  iflt succeeds if and only if value < 0
+				  ifle succeeds if and only if value ≤ 0
+				  ifgt succeeds if and only if value > 0
+				  ifge succeeds if and only if value ≥ 0
+		    */
+		    ///////////////////////////////////////
+			output.addBranchInstruction(onTrue ? IFLE : IFGT,
+					targetLabel);
+	    }
     }
-
 }

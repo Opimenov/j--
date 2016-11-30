@@ -10,11 +10,11 @@ import static jminusminus.CLConstants.*;
 
 class JLiteralLong extends JExpression {
 
-    /** String representation of the int. */
+    /** String representation of the long. */
     private String text;
 
     /**
-     * Construct an AST node for an int literal given its line number and string
+     * Construct an AST node for an long literal given its line number and string
      * representation.
      * 
      * @param line
@@ -29,7 +29,7 @@ class JLiteralLong extends JExpression {
     }
 
     /**
-     * Analyzing an int literal is trivial.
+     * Analyzing an long literal is trivial.
      * 
      * @param context
      *            context in which names are resolved (ignored here).
@@ -42,7 +42,7 @@ class JLiteralLong extends JExpression {
     }
 
     /**
-     * Generating code for an int literal means generating code to push it onto
+     * Generating code for an long literal means generating code to push it onto
      * the stack.
      * 
      * @param output
@@ -51,8 +51,12 @@ class JLiteralLong extends JExpression {
      */
 
     public void codegen(CLEmitter output) {
-	int i = Integer.parseInt(text);
-        switch (i) {
+	if (text.charAt(text.length() -1) == 'l' || text.charAt(text.length() -1) == 'L')
+	    text = text.substring(0, text.length() - 1);
+	//	System.out.println("are we here"+text);
+	long i = Long.parseLong(text);
+
+	/*        switch (i) {
         case 0:
             output.addNoArgInstruction(LCONST_0);
             break;
@@ -75,14 +79,13 @@ class JLiteralLong extends JExpression {
             if (i >= 6 && i <= 127) {
                 output.addOneArgInstruction(BIPUSH, i);
             } else if (i >= 128 && i <= 32767) {
-                output.addOneArgInstruction(SIPUSH, i);
+                 output.addOneArgInstruction(SIPUSH, i);
             } else {
-		//not sure what to do here??? 
-	    } else {
                 output.addLDCInstruction(i);
             }
         }
 	*/
+	output.addLDCInstruction(i);
     }
 
     /**

@@ -166,6 +166,7 @@ TOKEN:
 | <IMPLEMENTS: "implements" >
 | < INSTANCEOF: "instanceof" >
 | < INT: "int" >
+| < LONG: "long" >
 | < NEW: "new" >
 | < FOR: "for" >
 | < NULL: "null" >
@@ -241,6 +242,7 @@ TOKEN:
 TOKEN:
 {
   < INT_LITERAL: ("0" | <NON_ZERO_DIGIT> (<DIGIT>)*) >
+| <LONG_LITERAL: <INT_LITERAL> ("l" | "L") >
 | < CHAR_LITERAL: "'" (<ESC> | ~["'","\\","\n","\r"]) "'" >
 | <
    FLOAT_LITERAL : <FLOATING_POINT_LITERAL> ("f" | "F")
@@ -328,6 +330,7 @@ public JCompilationUnit compilationUnit(): {
         <EOF> { line = line == 0 ? token.beginLine : line; }
     } 
     catch ( ParseException e ) {
+	System.out.println("JCompilationUnit exception");
         recoverFromError( new int[] { SEMI, EOF }, e );
     }
     { 
@@ -362,7 +365,8 @@ private TypeName qualifiedIdentifier(): {
             { qualifiedIdentifier += "." + token.image; } 
         )*
     } 
-    catch ( ParseException e ) { 
+    catch ( ParseException e ) {
+	System.out.println("qualifiedIdentifier exc");
         recoverFromError( new int[] { SEMI, EOF }, e ); 
     }
     { return 
@@ -394,7 +398,8 @@ private JAST typeDeclaration(): {
 	  )
 	      
     } 
-    catch ( ParseException e ) { 
+    catch ( ParseException e ) {
+	System.out.println("typeDeclaration exc");
         recoverFromError( new int[] { SEMI, EOF }, e ); 
     }
     { return typeDeclaration; }
@@ -420,9 +425,11 @@ private ArrayList<String> modifiers(): {
     boolean scannedPRIVATE = false;
     boolean scannedSTATIC = false;
     boolean scannedABSTRACT = false;
-    boolean scannedFINAL = false;    
+    boolean scannedFINAL = false;
+    System.out.println("m1");
 }
 {
+    
     try {
     (   
         <PUBLIC> 
@@ -435,6 +442,7 @@ private ArrayList<String> modifiers(): {
                 reportParserError( "Access conflict in modifiers" );
             }
             scannedPUBLIC = true;
+	        System.out.println("m2");
         } |
         <PROTECTED> 
         { 
@@ -446,6 +454,7 @@ private ArrayList<String> modifiers(): {
                 reportParserError( "Access conflict in modifiers" );
             }
             scannedPROTECTED = true;
+	        System.out.println("m3");
         } |
         <PRIVATE> 
         { 
@@ -457,6 +466,7 @@ private ArrayList<String> modifiers(): {
                 reportParserError( "Access conflict in modifiers" );
             }
             scannedPRIVATE = true;
+	        System.out.println("m4");
         } |
         <STATIC> 
         { 
@@ -465,6 +475,7 @@ private ArrayList<String> modifiers(): {
                 reportParserError( "Repeated modifier: static" );
             }
             scannedSTATIC = true;
+	        System.out.println("m5");
         } |
         <FINAL> 
         { 
@@ -473,6 +484,7 @@ private ArrayList<String> modifiers(): {
                 reportParserError( "Repeated modifier: static" );
             }
             scannedFINAL = true;
+	        System.out.println("m6");
         } |
         <ABSTRACT> 
         { 
@@ -481,13 +493,23 @@ private ArrayList<String> modifiers(): {
                 reportParserError( "Repeated modifier: abstract" );
             }
             scannedABSTRACT = true;
-        } 
-    )*                  
+	        System.out.println("m7");
+        }
+    )*
+{ System.out.println("m8");}// HOW DO WE ADD DEFAULT ACTION HERE????
     } 
     catch ( ParseException e ) { 
+	System.out.println("modifiers exc");
         recoverFromError( new int[] { SEMI, EOF }, e ); 
     }
-    { return mods; }
+    {
+	System.out.println("inside mods");
+	System.out.println("mods is empty or null"+ (mods != null) +mods.isEmpty());
+	for (int i = 0; i < mods.size(); i++) {
+	    System.out.println(mods.get(i));
+	}	
+	return mods;
+    }
 }
 
 /**
@@ -523,7 +545,7 @@ private JClassDeclaration classDeclaration( ArrayList<String> mods ): {
         [ 
             <EXTENDS> superClass = qualifiedIdentifier() 
         ]
-       [
+        [
 	<IMPLEMENTS> superInterface = qualifiedIdentifier()
 	    {
 	      interFaceList = new ArrayList<Type>();
@@ -536,7 +558,8 @@ private JClassDeclaration classDeclaration( ArrayList<String> mods ): {
         ]
         classBody = classBody()           
     } 
-    catch ( ParseException e ) { 
+    catch ( ParseException e ) {
+	System.out.println("classDeclaration exc");
         recoverFromError( new int[] { SEMI, EOF }, e ); 
     }
     { 
@@ -593,7 +616,8 @@ private JInterfaceDeclaration interfaceDeclaration(
 	 ]
 	    interfaceBody = interfaceBody()
     }
-    catch ( ParseException e ) { 
+    catch ( ParseException e ) {
+	System.out.println("interfaceDeclaration exc");	
         recoverFromError( new int[] { SEMI, EOF }, e ); 
     }
     { 
@@ -621,14 +645,19 @@ private ArrayList<JMember> classBody(): {
 }
 {
     try {
-        <LCURLY>
+	{	System.out.println("getting here 0");}
+         <LCURLY>
+	      {	System.out.println("getting here 1");}
         ( 
-            mods = modifiers()
-            aMember = memberDecl( mods ) { members.add( aMember ); } 
+	 mods = modifiers() //not getting past this line if no access modifiers
+	 {    System.out.println(mods != null) ; }
+	 aMember = memberDecl( mods ) //<<< now I'm here'
+	    { members.add( aMember ); } 
         )*
         <RCURLY>
     } 
-    catch ( ParseException e ) { 
+    catch ( ParseException e ) {
+	System.out.println("classBody exc");	
         recoverFromError( new int[] { SEMI, EOF }, e ); 
     }
     { return members; }
@@ -666,7 +695,8 @@ private ArrayList<JMember> interfaceBody(): {
 	)*
         <RCURLY>
     } 
-    catch ( ParseException e ) { 
+    catch ( ParseException e ) {
+	System.out.println("interfaceBody exc");	
         recoverFromError( new int[] { SEMI, EOF }, e ); 
     }
     { return members; }
@@ -752,7 +782,8 @@ private JMember interfaceMemberDecl( ArrayList<String>  mods ): {
             }
         )
     } 
-    catch ( ParseException e ) { 
+    catch ( ParseException e ) {
+	System.out.println("interfaceMemberDecl exc");	
 	//	System.out.println("we are here");
         recoverFromError( new int[] { SEMI, EOF }, e ); 
     }
@@ -791,13 +822,17 @@ private JMember memberDecl( ArrayList<String>  mods ): {
     JMember memberDecl = null;
     ArrayList<Type> exceptionsList = null;
     Type someException = null;
+	    //for debugging
 }
 {
     try {
+	    {		System.out.println("in0");}
         LOOKAHEAD( <IDENTIFIER> <LPAREN> )
+	    {   System.out.println("d0");}
         (
             <IDENTIFIER> 
-            { 
+            {
+		System.out.println("d1");
                 line = token.beginLine; 
                 name = token.image; 
             } 
@@ -805,21 +840,26 @@ private JMember memberDecl( ArrayList<String>  mods ): {
 	    [
 	     <THROWS> someException = qualifiedIdentifier()
 		 {
+		     System.out.println("d2");
 		     exceptionsList = new ArrayList<Type>();
 		     exceptionsList.add(someException);
 		 }
 	     (
 	      <COMMA> someException = qualifiedIdentifier()
-		 {exceptionsList.add(someException);}	      
+		 {
+		     System.out.println("d3");
+		     exceptionsList.add(someException);}	      
              )*
            ]
             body = block()
-            { 
+            {
+		 {    System.out.println("constructor declaration");}
                 memberDecl = 
                 new JConstructorDeclaration( line, mods, name, params, body, exceptionsList );
             }
         ) |     
         LOOKAHEAD( ( <VOID> | type() ) <IDENTIFIER> <LPAREN> )
+	    {		System.out.println("w0");}
         (
             ( 
                 <VOID> { type = Type.VOID; } | 
@@ -844,12 +884,15 @@ private JMember memberDecl( ArrayList<String>  mods ): {
                 body = block() | 
                 <SEMI> 
             )
-            { 
+            {
+		{    System.out.println("method declaration");}
                 memberDecl = 
                    new JMethodDeclaration( line, mods, name, type, params, body, exceptionsList ); 
             } 
         ) | 
         ( 
+
+	 {    System.out.println("member decl before JFIELD DECLARATION");}
             type = type() { line = token.beginLine; }
             variableDeclarators = variableDeclarators( type )
             <SEMI>
@@ -858,7 +901,8 @@ private JMember memberDecl( ArrayList<String>  mods ): {
             }
         )
     } 
-    catch ( ParseException e ) { 
+    catch ( ParseException e ) {
+	System.out.println("memberDecl exc");	
         recoverFromError( new int[] { SEMI, EOF }, e ); 
     }
     { return memberDecl; }
@@ -888,7 +932,8 @@ private JBlock block(): {
         )*
         <RCURLY>
     } 
-    catch ( ParseException e ) { 
+    catch ( ParseException e ) {
+	System.out.println("block exc");	
         recoverFromError( new int[] { SEMI, EOF }, e ); 
     }   
     { return new JBlock( line, statements ); }
@@ -915,6 +960,7 @@ private JStatement blockStatement(): {
         statement =  statement() 
     } 
     catch ( ParseException e ) { 
+	System.out.println("blockStatement exc");
         recoverFromError( new int[] { SEMI, EOF }, e ); 
     }   
     { return statement; }
@@ -1014,7 +1060,8 @@ private JStatement statement(): {
         statement = statementExpression() 
         <SEMI>
 	    } 
-    catch ( ParseException e ) { 
+    catch ( ParseException e ) {
+	System.out.println("statement exc");	
         recoverFromError( new int[] { SEMI, EOF }, e ); 
     }
     { return statement; }
@@ -1052,6 +1099,7 @@ private ArrayList<JFormalParameter> formalParameters(): {
         <RPAREN>
     } 
     catch ( ParseException e ) { 
+	System.out.println("formal parameters exc");
         recoverFromError( new int[] { SEMI, EOF }, e ); 
     }
     { return parameters; }
@@ -1078,6 +1126,7 @@ private JFormalParameter formalParameter(): {
         <IDENTIFIER> { name = token.image; }
     } 
     catch ( ParseException e ) { 
+	System.out.println("formalParameter exc");
         recoverFromError( new int[] { SEMI, EOF }, e ); 
     }
     { return new JFormalParameter( line, name, type ); }
@@ -1398,7 +1447,8 @@ private Type basicType(): {
         <CHAR> { type = Type.CHAR; } |
         <FLOAT> { type = Type.FLOAT; } |
         <DOUBLE> { type = Type.DOUBLE; } |
-        <INT> { type = Type.INT; } 
+        <INT> { type = Type.INT; }
+	<LONG> { type = Type.LONG; }
     } 
     catch ( ParseException e ) { 
         recoverFromError( new int[] { SEMI, EOF }, e ); 
@@ -2046,7 +2096,9 @@ private JExpression literal(): {
 {       
     try {
         <INT_LITERAL> 
-        { expr = new JLiteralInt( token.beginLine, token.image ); } | 
+        { expr = new JLiteralInt( token.beginLine, token.image ); } |
+        <LONG_LITERAL> 
+        { expr = new JLiteralLong( token.beginLine, token.image ); } | 
         <CHAR_LITERAL> 
         { expr = new JLiteralChar( token.beginLine, token.image ); } |
         <FLOAT_LITERAL>

@@ -111,7 +111,10 @@ class JReturnStatement
                 || expr.type() == Type.BOOLEAN
                 || expr.type() == Type.CHAR) {
                 output.addNoArgInstruction(IRETURN);
-            } else {
+            } else if (expr.type() == Type.LONG) {
+		output.addNoArgInstruction(LRETURN);
+	    }
+	    else {
                 output.addNoArgInstruction(ARETURN);
             }
         }

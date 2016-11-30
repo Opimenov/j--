@@ -412,7 +412,6 @@ class Type {
     public String toDescriptor() {
         return descriptorFor(classRep);
     }
-
     /**
      * A helper translating a type's internal representation to its (JVM)
      * descriptor.
@@ -423,12 +422,15 @@ class Type {
      */
 
     private static String descriptorFor(Class<?> cls) {
-        return cls == null ? "V" : cls == void.class ? "V"
-                : cls.isArray() ? "[" + descriptorFor(cls.getComponentType())
-                        : cls.isPrimitive() ? (cls == int.class ? "I"
-                                : cls == char.class ? "C"
-                                        : cls == boolean.class ? "Z" : "?")
-                                : "L" + cls.getName().replace('.', '/') + ";";
+	return cls == null ? "V" : cls == void.class ? "V"
+	    : cls.isArray() ? "[" + descriptorFor(cls.getComponentType())
+	    : cls.isPrimitive() ? (cls == int.class ? "I"
+				   : cls == char.class ? "C"
+				   : cls == float.class ? "F"
+				   : cls == double.class ? "D"
+				   : cls == long.class ? "J"
+				   : cls == boolean.class ? "Z" : "?")
+	    : "L" + cls.getName().replace('.', '/') + ";";
     }
 
     /**

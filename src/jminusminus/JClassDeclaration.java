@@ -292,13 +292,16 @@ class JClassDeclaration extends JAST implements JTypeDecl {
 	    p.println("<Implemented interface list>");	    
 	}
         if (classBlock != null) {
-            p.println("<ClassBlock>");
+            p.println("<ClassBody>");
 	    p.indentRight();
             for (JMember member : classBlock) {
-                if (member != null) ((JAST) member).writeToStdOut(p);
+		if (member != null) ((JAST) member).writeToStdOut(p);
             }
+	    if (instanceFieldInitializations != null ) 
+		for (JFieldDeclaration jf : instanceFieldInitializations)
+		    jf.writeToStdOut(p);
 	    p.indentLeft();
-            p.println("</ClassBlock>");
+            p.println("</ClassBody>"); 
         }
         p.indentLeft();
         p.println("</JClassDeclaration>");
